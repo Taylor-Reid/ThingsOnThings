@@ -4,7 +4,7 @@
 
 class Node{
 public:
-	Node(int shapeNum, int x, int y, int d1, int d2,ci::Color8u col);
+	Node(int shapeNum, float x, float y, float d1, float d2,ci::Color8u col,int idNum);
 
 	Node* next_;
 	
@@ -16,18 +16,18 @@ public:
 
 	bool isSquare_;
 	bool isCircle_;
-	//bool isTriangle_;
-	int xPos_;
-	int yPos_;
-	int width_;
-	int height_;
-	int radius_;
-	/*
-	int p1;
-	int p2;
-	int p3;
-	*/
+	float xPos_;
+	float yPos_;
+	float width_;
+	float height_;
+	float radius_;
+	
+	float vx_;
+	float vy_;
+	
 	ci::Color8u shade_;
+
+	int id_;
 
 	//functions
 

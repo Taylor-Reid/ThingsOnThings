@@ -20,7 +20,7 @@ using namespace std;
 
 
 
-Node::Node(int shapeNum, int x, int y, int dim1, int dim2,Color8u col){
+Node::Node(int shapeNum, float x, float y, float dim1, float dim2,Color8u col,int idNum){
 	next_=this;
 	hasSub_=false;
 
@@ -28,12 +28,26 @@ Node::Node(int shapeNum, int x, int y, int dim1, int dim2,Color8u col){
 
 	xPos_=x;
 	yPos_=y;
-	if(shapeNum=0){//Rectangle
+
+	vx_;
+	vy_;
+
+	id_=idNum;
+
+	if(shapeNum==0){//Rectangle
 		width_=dim1;
 		height_=dim2;
-	}else if(shapeNum=1){//Circle
+		isSquare_=true;
+		isCircle_=false;
+	}else if(shapeNum==1){//Circle
 		radius_=dim1;
-	}else{
-
+		isSquare_=false;
+		isCircle_=true;
+	}else{//forces rectangle if not given 0 or 1
+		shapeNum=0;
+		width_=dim1;
+		height_=dim2;
+		isSquare_=true;
+		isCircle_=false;
 	}
 }
