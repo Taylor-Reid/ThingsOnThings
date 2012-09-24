@@ -13,7 +13,11 @@
 *
 * @note This project satisfies main goals : (A) linked list structure, (B) help message, (C) reordering of items, (D) movement
 *											(E) reversing with one button, 
-*							stretch goals : 
+*							stretch goals : (J) game : incomplete.
+*				Game goals to be finished : Randomizes the desired order, if player sets shapes to that order, player receives
+											how ever many points are still on the clock. The game will the go on to the next round,
+											adding one more shape, re-randomizing the order, and resetting the score clock. 
+											Game ends if score clock goes to 0, or player completes round 15. 
 */
 
 #include "cinder/app/AppBasic.h"
@@ -41,14 +45,29 @@ class ThingsOnThingsApp : public AppBasic {
   public:
 	void setup();
 	void mouseDown( MouseEvent event );	
+	void keyDown( KeyEvent event );
 	void update();
 	void draw();
 	void prepareSettings(Settings* settings);
+
+	/*
+		Sends puts a newly created node after the indicated node.
+		Does not work for nodes already in the list. Use sendToFront for that purpose.
+	*/
 	void insertAfter(Node* afterMe,Node* newLink);
+
+	/*
+		Take's a node from in the list, and sends it to the front of the list. Note: this means it will draw in the back
+		of the image, if wanting to send to front of image you must reverse the list, call this function, then reverse again.
+	*/
 	void sendToFront(Node* sentinel,Node* toMove);
+
+	/*
+		Reverses the order of the list.
+	*/
 	void reverseList(Node* sentinel);
 	void addNewItem();
-	void keyDown( KeyEvent event );
+	
 
 private:
 	int frameNum_;
@@ -60,6 +79,7 @@ private:
 	static const int appWidth_=640;
 	static const int activeBound_=100;
 	bool helpMenu_;
+	bool justStarted_;
 	Font font_;
 	gl::Texture texture_;
 	gl::Texture texture2_;
@@ -67,7 +87,7 @@ private:
 	int scoreTotal_;
 	int round_;
 	int selected_;
-
+	float timeEst_;
 };
 
 void ThingsOnThingsApp::prepareSettings(Settings* settings){
@@ -114,11 +134,13 @@ void ThingsOnThingsApp::sendToFront(Node* sentinel,Node* toMove){
 void ThingsOnThingsApp::setup()
 {
 	helpMenu_=true;
+	justStarted_=true;
 	frameNum_=0;
 	score_=0;
 	round_=1;
 	scoreTotal_=0;
 	selected_=0;
+	timeEst_=0.0f;
 
 	font_=Font("Cambria",20);
 
@@ -231,6 +253,8 @@ void ThingsOnThingsApp::keyDown( KeyEvent event )
 		reverseList(relativeSent_);
 		sendToFront(relativeSent_,relativeTemp);
 		reverseList(relativeSent_);
+		
+		selected_=itemNum_-1;
 
 	}
 	if( event.getChar() == 'n' ) {//changes selected object
@@ -286,7 +310,17 @@ void ThingsOnThingsApp::keyDown( KeyEvent event )
 
 void ThingsOnThingsApp::update()
 {
+	//get start time
+	if(justStarted_){
+		justStarted_=false;
+		timeEst_=0.0f;
+	}
+	//update basic variables
 	frameNum_++;
+	score_=int(60-timeEst_);
+	timeEst_=timeEst_+0.1f;
+	
+
 	//updates node positions, sizes , checks to make sure not out of bounds
 	Node* temp = sentinel_->next_;
 	do{
@@ -357,12 +391,18 @@ void ThingsOnThingsApp::draw()
 			if(count == selected_){
 				gl::color(Color8u(255,255,255));
 				gl::drawSolidRect(cinder::Rectf(temp->xPos_-3,temp->yPos_-3,temp->xPos_ +3+ temp->width_,temp->yPos_ +3+ temp->height_));
+			}else{//draws black border on all others
+				gl::color(Color8u(0,0,0));
+				gl::drawSolidRect(cinder::Rectf(temp->xPos_-3,temp->yPos_-3,temp->xPos_ +3+ temp->width_,temp->yPos_ +3+ temp->height_));
 			}
 			gl::color(temp->shade_);
 			gl::drawSolidRect(cinder::Rectf(temp->xPos_,temp->yPos_,temp->xPos_ + temp->width_,temp->yPos_ + temp->height_));
-		}else{
+		}else{//same for circles
 			if(count == selected_){
 				gl::color(Color8u(255,255,255));
+				gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_+3);
+			}else{
+				gl::color(Color8u(0,0,0));
 				gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_+3);
 			}
 			gl::color(temp->shade_);
@@ -377,7 +417,7 @@ void ThingsOnThingsApp::draw()
 	gl::drawSolidRect(cinder::Rectf(0,0,640,activeBound_));
 
 	string txt2 = " Score:                                                                                                                                                       Round: \n\n";
-	txt2 = txt2 + " Score placeholder                                                                                                        Round placeholder \n\n";
+	txt2 = txt2 + " Score Placeholder                                                                                                             Round placeholder \n\n";
 	TextBox box2 = TextBox().alignment( TextBox::CENTER ).font(font_).size(640,100).text( txt2 );
 	box2.setColor( Color8u( 0,0,0) );
 	box2.setBackgroundColor( Color8u( 255,255,255 ) );
@@ -394,10 +434,16 @@ void ThingsOnThingsApp::draw()
 	//draws small non moving objects in upper window
 	temp = privateSent_->next_;
 	do{
-		gl::color(temp->shade_);
 		if(temp->isSquare_){
+			gl::color(Color8u(0,0,0));
+			gl::drawSolidRect(cinder::Rectf(temp->xPos_-1,temp->yPos_-1,temp->xPos_ +1+ temp->width_,temp->yPos_ +1+ temp->height_));
+			gl::color(temp->shade_);
 			gl::drawSolidRect(cinder::Rectf(temp->xPos_,temp->yPos_,temp->xPos_ + temp->width_,temp->yPos_ + temp->height_));
+			
 		}else{
+			gl::color(Color8u(0,0,0));
+			gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_+1);
+			gl::color(temp->shade_);
 			gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_);
 		}
 		temp=temp->next_;
@@ -406,10 +452,15 @@ void ThingsOnThingsApp::draw()
 	//draw the ones that represent the big objects positions
 	temp = relativeSent_->next_;
 	do{
-		gl::color(temp->shade_);
 		if(temp->isSquare_){
+			gl::color(Color8u(0,0,0));
+			gl::drawSolidRect(cinder::Rectf(temp->xPos_-1,temp->yPos_-1,temp->xPos_ +1+ temp->width_,temp->yPos_ +1+ temp->height_));
+			gl::color(temp->shade_);
 			gl::drawSolidRect(cinder::Rectf(temp->xPos_,temp->yPos_,temp->xPos_ + temp->width_,temp->yPos_ + temp->height_));
 		}else{
+			gl::color(Color8u(0,0,0));
+			gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_+1);
+			gl::color(temp->shade_);
 			gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_);
 		}
 		temp=temp->next_;
