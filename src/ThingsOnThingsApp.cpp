@@ -3,6 +3,11 @@
 #include "cinder/gl/Texture.h"
 #include "cinder/ImageIo.h"
 #include "cinder/Rand.h"
+#include "cinder/gl/Texture.h"
+#include "cinder/Text.h"
+#include "cinder/Surface.h"
+#include "cinder/Cinder.h"
+#include "cinder/Font.h"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "Resources.h"
 #include "Node.h"
@@ -35,6 +40,8 @@ private:
 	static const int appWidth_=640;
 	static const int activeBound_=100;
 	bool helpMenu_;
+	Font font_;
+	gl::Texture texture_;
 
 };
 
@@ -64,8 +71,10 @@ void ThingsOnThingsApp::reverseList(Node* sentinel){
 
 void ThingsOnThingsApp::setup()
 {
-	helpMenu_=false;
+	helpMenu_=true;
 	frameNum_=0;
+
+	font_=Font("Cambria",20);
 
 	//initializes sentinel and its subsequent starting nodes
 	sentinel_= new Node(0,0,0,0,0,Color8u(0,0,0),0);
@@ -237,6 +246,12 @@ void ThingsOnThingsApp::draw()
 		gl::drawSolidRect(cinder::Rectf(0,activeBound_,640,appHeight_));
 		gl::color(Color8u(200,200,200));
 		gl::drawSolidRect(cinder::Rectf(0+2,activeBound_+2,640-2,appHeight_-2));
+		string txt = "The Things On Things Game!\n\n Controls: \n Press '?' to open or close this menu. \n Press spacebar to reverse the order of the shapes. \n Press 'a' to add another shape (for testing purposes only, incase you don't want to play the game). \n\n Goals:\n Get the moving shapes to match the order of the shapes in the small window. \n The less time you take, the more points you get! \n";
+		TextBox box = TextBox().alignment( TextBox::CENTER ).font(font_).size(640,380).text( txt );
+		box.setColor( Color8u( 0,0,0) );
+		box.setBackgroundColor( Color8u( 255,255,255 ) );
+		texture_ = gl::Texture( box.render() );
+		gl::draw(texture_);
 	}
 	
 }
