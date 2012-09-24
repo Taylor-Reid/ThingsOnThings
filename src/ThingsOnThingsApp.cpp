@@ -1,3 +1,21 @@
+/**
+* @file ThingsOnThingsApp.cpp
+* CSE 274 - Fall 2012
+* My solution for HW02.
+*
+* @author Taylor Reid
+* @date 2012-09-24
+*
+* @note This file is (c) 2012. It is licensed under the
+* CC BY 3.0 license (http://creativecommons.org/licenses/by/3.0/),
+* which means you are free to use, share, and remix it as long as you
+* give attribution. Commercial uses are allowed.
+*
+* @note This project satisfies main goals : (A) linked list structure, (B) help message, (C) reordering of items, (D) movement
+*											(E) reversing with one button, 
+*							stretch goals : 
+*/
+
 #include "cinder/app/AppBasic.h"
 #include "cinder/gl/gl.h"
 #include "cinder/gl/Texture.h"
@@ -27,6 +45,7 @@ class ThingsOnThingsApp : public AppBasic {
 	void draw();
 	void prepareSettings(Settings* settings);
 	void insertAfter(Node* afterMe,Node* newLink);
+	void sendToFront(Node* toMove);
 	void reverseList(Node* sentinel);
 	void addNewItem();
 	void keyDown( KeyEvent event );
@@ -36,12 +55,18 @@ private:
 	int itemNum_;
 	Node* sentinel_;
 	Node* privateSent_;
+	Node* relativeSent_;
 	static const int appHeight_=480;
 	static const int appWidth_=640;
 	static const int activeBound_=100;
 	bool helpMenu_;
 	Font font_;
 	gl::Texture texture_;
+	gl::Texture texture2_;
+	int score_;
+	int scoreTotal_;
+	int round_;
+	int selected_;
 
 };
 
@@ -67,12 +92,33 @@ void ThingsOnThingsApp::reverseList(Node* sentinel){
 	}while(prev != sentinel);
 }
 
+void ThingsOnThingsApp::sendToFront(Node* toMove){
+	Node* temp = sentinel_->next_;
+	Node* prev = sentinel_;
+	bool found = false;
+	do{
+		if(temp==toMove){
+			found=true;
+		}else{
+			prev=prev->next_;
+			temp = prev->next_;
+		}
+	}while(!found);
+	prev->next_=temp->next_;
+	temp->next_=sentinel_->next_;
+	sentinel_->next_=temp;
+}
+
 
 
 void ThingsOnThingsApp::setup()
 {
 	helpMenu_=true;
 	frameNum_=0;
+	score_=0;
+	round_=1;
+	scoreTotal_=0;
+	selected_=0;
 
 	font_=Font("Cambria",20);
 
@@ -82,26 +128,34 @@ void ThingsOnThingsApp::setup()
 	insertAfter(sentinel_,new Node(0,500,350,100,100,Color8u(0,255,0),2));
 
 	privateSent_= new Node(0,0,0,0,0,Color8u(0,0,0),0);
-	insertAfter(privateSent_,new Node(1,215,40,10,0,Color8u(255,0,0),1));
-	insertAfter(privateSent_,new Node(0,230,40,20,20,Color8u(0,255,0),2));
+	insertAfter(privateSent_,new Node(1,215,25,10,0,Color8u(255,0,0),1));
+	insertAfter(privateSent_,new Node(0,230,25,20,20,Color8u(0,255,0),2));
+
+	relativeSent_= new Node(0,0,0,0,0,Color8u(0,0,0),0);
+	insertAfter(relativeSent_,new Node(1,215,55,10,0,Color8u(255,0,0),1));
+	insertAfter(relativeSent_,new Node(0,230,55,20,20,Color8u(0,255,0),2));
+
 	itemNum_=2;
 }
 
 void ThingsOnThingsApp::addNewItem(){
-	itemNum_++;
-	int shapeNum = itemNum_%2;
-	float x = randFloat(0.0f,appWidth_-100.0f);
-	float y = randFloat(activeBound_,appHeight_-100.0f);
-	float dim = 50+50*((itemNum_+1)%2);
-	int c1=((itemNum_)%3)*127;
-	int c2=((itemNum_+1)%3)*127;
-	int c3=((itemNum_+2)%3)*127;
-	insertAfter(sentinel_,new Node(shapeNum,x,y,dim,dim,Color8u(c1,c2,c3),itemNum_));
-	insertAfter(privateSent_,new Node(shapeNum,200+itemNum_*15,40,dim/5,dim/5,Color8u(c1,c2,c3),itemNum_));
+	if (itemNum_ < 14){
+		itemNum_++;
+		int shapeNum = itemNum_%2;
+		float x = randFloat(0.0f,appWidth_-100.0f);
+		float y = randFloat(activeBound_,appHeight_-100.0f);
+		float dim = 50+50*((itemNum_+1)%2);
+		int c1=((itemNum_)%3)*127;
+		int c2=((itemNum_+1)%3)*127;
+		int c3=((itemNum_+2)%3)*127;
+		insertAfter(sentinel_,new Node(shapeNum,x,y,dim,dim,Color8u(c1,c2,c3),itemNum_));
+		insertAfter(privateSent_,new Node(shapeNum,200+itemNum_*15,25,dim/5,dim/5,Color8u(c1,c2,c3),itemNum_));
+		insertAfter(relativeSent_,new Node(shapeNum,200+itemNum_*15,55,dim/5,dim/5,Color8u(c1,c2,c3),itemNum_));
+	}
 }
 
 void ThingsOnThingsApp::mouseDown( MouseEvent event )
-{
+{	/*
 	int x= event.getX();
 	int y= event.getY();
 	int tx;
@@ -137,9 +191,10 @@ void ThingsOnThingsApp::mouseDown( MouseEvent event )
 	//if object is not null, it sends it to front of image (back of list)
 	if (object != sentinel_){
 		reverseList(sentinel_);
-		insertAfter(sentinel_,object);
+		sendToFront(object);
 		reverseList(sentinel_);
 	}
+	*/
 }
 
 void ThingsOnThingsApp::keyDown( KeyEvent event )
@@ -156,11 +211,81 @@ void ThingsOnThingsApp::keyDown( KeyEvent event )
 	if( event.getChar() == 'a' ) {
 		addNewItem();
 	}
+	if( event.getChar() == 'v' ) {//changes selected object
+		if(selected_<itemNum_-1){
+			selected_++;
+		}
+	}
+	if( event.getChar() == 'b' ) {//sends selected object to front.
+		Node* temp = sentinel_->next_;
+		Node* relativeTemp = relativeSent_->next_;
+		for(int i = 0; i<selected_; i++){
+			temp=temp->next_;
+			//relativeTemp=relativeTemp->next_;
+		}
+		reverseList(sentinel_);
+		sendToFront(temp);
+		reverseList(sentinel_);
+
+		//reverseList(relativeSent_);
+		//sendToFront(relativeTemp);
+		//reverseList(relativeSent_);
+
+	}
+	if( event.getChar() == 'n' ) {//changes selected object
+		if(selected_>0){
+			selected_--;
+		}
+	}
+	/*
+	if( event.getChar() == 'c' ) {
+		Vec2i xy =getMousePos();
+		int x = xy.x;
+		int y = xy.y;
+		int tx;
+		int ty;
+		int centerx;
+		int centery;
+		int dx;
+		int dy;
+	
+		Node* temp=sentinel_->next_;
+		Node* object = sentinel_; 
+		//starts at front of list (back of image) , saves a temp of any shape that is under the mouse pointer
+		// overwrites if a new shape is under mouse pointer. Results in the top most (the object seen under the mouse pointer) being saved.
+		do{
+			tx = temp->xPos_;
+			ty = temp->yPos_;
+			if(temp->isSquare_){
+				if(x>=tx && x<=(tx+temp->width_) && y>=ty && y<=(ty+temp->height_)){
+					object=temp;
+				}
+			}else{
+				centerx=tx+temp->radius_;
+				centery=ty+temp->radius_;
+				dx = x-centerx;
+				dy = y-centery;
+				if((dx*dx+dy*dy)<=temp->radius_){
+					object=temp;
+				}
+			}
+				
+			temp=temp->next_;
+		}while(temp != sentinel_);
+		//if object is not null, it sends it to front of image (back of list)
+		if (object != sentinel_){
+			reverseList(sentinel_);
+			insertAfter(sentinel_,object);
+			reverseList(sentinel_);
+		}
+	}
+	*/
 
 }
 
 void ThingsOnThingsApp::update()
 {
+	frameNum_++;
 	//updates node positions, sizes , checks to make sure not out of bounds
 	Node* temp = sentinel_->next_;
 	do{
@@ -203,7 +328,18 @@ void ThingsOnThingsApp::update()
 		}
 		temp=temp->next_;
 	}while(temp != sentinel_);
-	
+
+	//updates relativeSent list to fix position:
+	reverseList(relativeSent_);
+	temp = relativeSent_->next_;
+	int count = 1;
+	do{
+		temp->xPos_=200+count*15;
+		temp=temp->next_;
+		count++;
+	}while(temp != relativeSent_);
+	reverseList(relativeSent_);
+
 }
 
 void ThingsOnThingsApp::draw()
@@ -211,24 +347,50 @@ void ThingsOnThingsApp::draw()
 	// clear out the window with black
 	gl::clear( Color( 0, 0, 0 ) );
 
+	int count = 0; 
+
 	Node* temp = sentinel_->next_;
 	do{
-		gl::color(temp->shade_);
 		if(temp->isSquare_){
+			//draws white border around selected object
+			if(count == selected_){
+				gl::color(Color8u(255,255,255));
+				gl::drawSolidRect(cinder::Rectf(temp->xPos_-3,temp->yPos_-3,temp->xPos_ +3+ temp->width_,temp->yPos_ +3+ temp->height_));
+			}
+			gl::color(temp->shade_);
 			gl::drawSolidRect(cinder::Rectf(temp->xPos_,temp->yPos_,temp->xPos_ + temp->width_,temp->yPos_ + temp->height_));
 		}else{
+			if(count == selected_){
+				gl::color(Color8u(255,255,255));
+				gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_+3);
+			}
+			gl::color(temp->shade_);
 			gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_);
+			
 		}
 		temp=temp->next_;
+		count++;
 	}while(temp != sentinel_);
 
 	gl::color(Color8u(200,200,200));
 	gl::drawSolidRect(cinder::Rectf(0,0,640,activeBound_));
+
+	string txt2 = " Score:                                                                                                                                                       Round: \n\n";
+	txt2 = txt2 + " Score placeholder                                                                                                        Round placeholder \n\n";
+	TextBox box2 = TextBox().alignment( TextBox::CENTER ).font(font_).size(640,100).text( txt2 );
+	box2.setColor( Color8u( 0,0,0) );
+	box2.setBackgroundColor( Color8u( 255,255,255 ) );
+	texture2_ = gl::Texture( box2.render() );
+	gl::draw(texture2_);
+	
 	gl::color(Color8u(100,100,100));
 	gl::drawSolidRect(cinder::Rectf(150-2,10-2,490+2,activeBound_-10+2));
 	gl::color(Color8u(0,0,0));
 	gl::drawSolidRect(cinder::Rectf(150,10,640-150,activeBound_-10));
+	
 
+
+	//draws small non moving objects in upper window
 	temp = privateSent_->next_;
 	do{
 		gl::color(temp->shade_);
@@ -239,6 +401,17 @@ void ThingsOnThingsApp::draw()
 		}
 		temp=temp->next_;
 	}while(temp != privateSent_);
+	//draw the ones that represent the big objects positions
+	temp = relativeSent_->next_;
+	do{
+		gl::color(temp->shade_);
+		if(temp->isSquare_){
+			gl::drawSolidRect(cinder::Rectf(temp->xPos_,temp->yPos_,temp->xPos_ + temp->width_,temp->yPos_ + temp->height_));
+		}else{
+			gl::drawSolidCircle(cinder::Vec2f(temp->xPos_+temp->radius_,temp->yPos_+temp->radius_),temp->radius_);
+		}
+		temp=temp->next_;
+	}while(temp != relativeSent_);
 
 	//Displays help menu if it has been activated
 	if(helpMenu_){
@@ -246,7 +419,7 @@ void ThingsOnThingsApp::draw()
 		gl::drawSolidRect(cinder::Rectf(0,activeBound_,640,appHeight_));
 		gl::color(Color8u(200,200,200));
 		gl::drawSolidRect(cinder::Rectf(0+2,activeBound_+2,640-2,appHeight_-2));
-		string txt = "The Things On Things Game!\n\n Controls: \n Press '?' to open or close this menu. \n Press spacebar to reverse the order of the shapes. \n Press 'a' to add another shape (for testing purposes only, incase you don't want to play the game). \n\n Goals:\n Get the moving shapes to match the order of the shapes in the small window. \n The less time you take, the more points you get! \n";
+		string txt = "The Things On Things Game!\n\n Controls: \n Press '?' to open or close this menu. \n Press spacebar to reverse the order of the shapes. \n Press 'a' to add another shape (for testing purposes only,\n incase you don't want to play the game).\n Press 'c' to simulate a mouseclick.\n This will send the object visible under the mouse pointer to the front. \n\n Goals:\n Get the moving shapes to match the order of the shapes in the small window. \n The less time you take, the more points you get! \n";
 		TextBox box = TextBox().alignment( TextBox::CENTER ).font(font_).size(640,380).text( txt );
 		box.setColor( Color8u( 0,0,0) );
 		box.setBackgroundColor( Color8u( 255,255,255 ) );
