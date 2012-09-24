@@ -29,8 +29,10 @@ Node::Node(int shapeNum, float x, float y, float dim1, float dim2,Color8u col,in
 	xPos_=x;
 	yPos_=y;
 
-	vx_;
-	vy_;
+	vx_=randFloat(0.3f,1.0f);
+	vy_=randFloat(0.3f,1.0f);
+
+	dr_=randFloat(0.00f,0.3f);
 
 	id_=idNum;
 

@@ -24,6 +24,8 @@ public:
 	
 	float vx_;
 	float vy_;
+
+	float dr_;
 	
 	ci::Color8u shade_;
 
