@@ -45,7 +45,7 @@ class ThingsOnThingsApp : public AppBasic {
 	void draw();
 	void prepareSettings(Settings* settings);
 	void insertAfter(Node* afterMe,Node* newLink);
-	void sendToFront(Node* toMove);
+	void sendToFront(Node* sentinel,Node* toMove);
 	void reverseList(Node* sentinel);
 	void addNewItem();
 	void keyDown( KeyEvent event );
@@ -92,9 +92,9 @@ void ThingsOnThingsApp::reverseList(Node* sentinel){
 	}while(prev != sentinel);
 }
 
-void ThingsOnThingsApp::sendToFront(Node* toMove){
-	Node* temp = sentinel_->next_;
-	Node* prev = sentinel_;
+void ThingsOnThingsApp::sendToFront(Node* sentinel,Node* toMove){
+	Node* temp = sentinel->next_;
+	Node* prev = sentinel;
 	bool found = false;
 	do{
 		if(temp==toMove){
@@ -105,8 +105,8 @@ void ThingsOnThingsApp::sendToFront(Node* toMove){
 		}
 	}while(!found);
 	prev->next_=temp->next_;
-	temp->next_=sentinel_->next_;
-	sentinel_->next_=temp;
+	temp->next_=sentinel->next_;
+	sentinel->next_=temp;
 }
 
 
@@ -206,6 +206,7 @@ void ThingsOnThingsApp::keyDown( KeyEvent event )
 
 	if( event.getChar() == ' ' ) {
 		reverseList(sentinel_);
+		reverseList(relativeSent_);
 	}
 
 	if( event.getChar() == 'a' ) {
@@ -221,15 +222,15 @@ void ThingsOnThingsApp::keyDown( KeyEvent event )
 		Node* relativeTemp = relativeSent_->next_;
 		for(int i = 0; i<selected_; i++){
 			temp=temp->next_;
-			//relativeTemp=relativeTemp->next_;
+			relativeTemp=relativeTemp->next_;
 		}
 		reverseList(sentinel_);
-		sendToFront(temp);
+		sendToFront(sentinel_,temp);
 		reverseList(sentinel_);
 
-		//reverseList(relativeSent_);
-		//sendToFront(relativeTemp);
-		//reverseList(relativeSent_);
+		reverseList(relativeSent_);
+		sendToFront(relativeSent_,relativeTemp);
+		reverseList(relativeSent_);
 
 	}
 	if( event.getChar() == 'n' ) {//changes selected object
@@ -401,6 +402,7 @@ void ThingsOnThingsApp::draw()
 		}
 		temp=temp->next_;
 	}while(temp != privateSent_);
+
 	//draw the ones that represent the big objects positions
 	temp = relativeSent_->next_;
 	do{
@@ -419,8 +421,9 @@ void ThingsOnThingsApp::draw()
 		gl::drawSolidRect(cinder::Rectf(0,activeBound_,640,appHeight_));
 		gl::color(Color8u(200,200,200));
 		gl::drawSolidRect(cinder::Rectf(0+2,activeBound_+2,640-2,appHeight_-2));
-		string txt = "The Things On Things Game!\n\n Controls: \n Press '?' to open or close this menu. \n Press spacebar to reverse the order of the shapes. \n Press 'a' to add another shape (for testing purposes only,\n incase you don't want to play the game).\n Press 'c' to simulate a mouseclick.\n This will send the object visible under the mouse pointer to the front. \n\n Goals:\n Get the moving shapes to match the order of the shapes in the small window. \n The less time you take, the more points you get! \n";
-		TextBox box = TextBox().alignment( TextBox::CENTER ).font(font_).size(640,380).text( txt );
+		
+		string txt = "The Things On Things Game!\n\n Controls: \n Press '?' to open or close this menu. \n Press spacebar to reverse the order of the shapes. \n Press 'a' to add another shape (for testing purposes only,\n incase you don't want to play the game).\n Press 'v' & 'n' to toggle through the objects.\n Press 'b' to send the selected object (outlined in white) to the front. \n\n Goals:\n Get the moving shapes to match the order of the shapes in the small window. \n The less time you take, the more points you get! \n";
+		TextBox box = TextBox().alignment( TextBox::CENTER ).font(font_).size(640,480).text( txt );
 		box.setColor( Color8u( 0,0,0) );
 		box.setBackgroundColor( Color8u( 255,255,255 ) );
 		texture_ = gl::Texture( box.render() );
